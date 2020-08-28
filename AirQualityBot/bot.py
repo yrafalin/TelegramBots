@@ -1,4 +1,5 @@
 import logging
+import datetime
 import requests
 
 from telegram.ext import Updater, CommandHandler, KeyboardButton, ReplyKeyboardMarkup, Filters
@@ -13,14 +14,24 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 
-def start(update, context):
-    update.message.reply_text('Hi! Use /set <seconds> to set a timer')
+def send_start(update, context):
+    chat_id = update.message.chat_id
+
+    context.bot.send_message(chat_id=chat_id, text=start,
+                             parse_mode='Markdown')
+
+
+def send_help(update, context):
+    chat_id = update.message.chat_id
+
+    context.bot.send_message(chat_id=chat_id, text=help,
+                             parse_mode='Markdown')
 
 
 def send_set_home(update, context):
     chat_id = update.message.chat_id
     location_keyboard = KeyboardButton(
-        text="Send home location", request_location=True)
+        text="Send home location 📍🏠", request_location=True)
     cancel_button = KeyboardButton(text="Cancel")
     custom_keyboard = [[location_keyboard, cancel_button]]
     reply_markup = ReplyKeyboardMarkup(
@@ -32,30 +43,34 @@ def send_set_home(update, context):
 
 def send_home(update, context):
     chat_id = update.message.chat_id
-    lat = context.chat_data['lat']
-    lon = context.chat_data['lon']
 
-    endpoint = 'https://api.waqi.info/feed/geo:{0};{1}/?token={2}'.format(
-        lat, lon, AQI_TOKEN)
+    if 'lat' in context.chat_data:
+        lat = context.chat_data['lat']
+        lon = context.chat_data['lon']
 
-    result = requests.get(endpoint).json()
+        endpoint = 'https://api.waqi.info/feed/geo:{0};{1}/?token={2}'.format(
+            lat, lon, AQI_TOKEN)
 
-    aqi = result['data']['aqi']
-    city = result['data']['city']['name']
-    url = result['data']['city']['url']
-    pol = result['data']['dominentpol']
-    aqilevel = classify(aqi)
+        result = requests.get(endpoint).json()
 
-    message = f"*Home - {city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
+        aqi = result['data']['aqi']
+        city = result['data']['city']['name']
+        url = result['data']['city']['url']
+        pol = result['data']['dominentpol']
+        aqilevel, warning = classify(aqi)
 
-    context.bot.send_message(chat_id=chat_id, text=message,
-                             parse_mode='Markdown')
+        message = f"*🏠 {city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
+
+        context.bot.send_message(chat_id=chat_id, text=message,
+                                 parse_mode='Markdown')
+    else:
+        context.bot.send_message(chat_id=chat_id, text=messages['missing_home_msg'])
 
 
 def send_here(update, context):
     chat_id = update.message.chat_id
     location_keyboard = KeyboardButton(
-        text="Send location", request_location=True)
+        text="Send your location 📍🌎", request_location=True)
     cancel_button = KeyboardButton(text="Cancel")
     custom_keyboard = [[location_keyboard, cancel_button]]
     reply_markup = ReplyKeyboardMarkup(
@@ -80,9 +95,9 @@ def send_search(update, context):
             city = result['data']['city']['name']
             url = result['data']['city']['url']
             pol = result['data']['dominentpol']
-            attrib = result['data']['attributions']
+            aqilevel, warning = classify(aqi)
 
-            message =
+            message = f"*{city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
 
             context.bot.send_message(chat_id=chat_id, text=message,
                                      parse_mode='Markdown')
@@ -93,18 +108,46 @@ def send_search(update, context):
 def send_monitor_on(update, context):
     chat_id = update.message.chat_id
 
+    if 'lat' in context.chat_data:
+        try:
+            # args[0] should contain the time for the timer in seconds
+            reminder_time = datetime.strptime(context.args[0], "%H:%M")
+
+            # Add job to queue and stop current one if there is a timer already
+            if 'job' in context.chat_data:
+                old_job = context.chat_data['job']
+                old_job.schedule_removal()
+            new_job = context.job_queue.run_daily(send_home_monitor, reminder_time, context=chat_id)
+            context.chat_data['job'] = new_job
+
+            context.bot.send_message(chat_id=chat_id, text=messages['monitor_success_msg'])
+
+        except ValueError:
+            context.bot.send_message(chat_id=chat_id, text=messages['missing_time_msg'])
+
+    else:
+        context.bot.send_message(chat_id=chat_id, text=messages['missing_home_msg'])
+
 
 def send_monitor_off(update, context):
     chat_id = update.message.chat_id
 
+    if 'job' in context.chat_data:
+        job = context.chat_data['job']
+        job.schedule_removal()
+        del context.chat_data['job']
+
+        context.bot.send_message(chat_id=chat_id, text=messages['moniter_off_msg'])
+
+    else:
+        context.bot.send_message(chat_id=chat_id, text=messages['missing_moniter_msg'])
+
 
 def home_location_sent(update, context):
     chat_id = update.message.chat_id
-    lat = update.message.location['latitude']
-    lon = update.message.location['longitude']
 
-    context.chat_data['lat'] = lat
-    context.chat_data['lon'] = lon
+    context.chat_data['lat'] = update.message.location['latitude']
+    context.chat_data['lon'] = update.message.location['longitude']
 
     context.bot.send_message(chat_id=chat_id, text=messages['home_set_msg'])
 
@@ -123,21 +166,40 @@ def here_location_sent(update, context):
     city = result['data']['city']['name']
     url = result['data']['city']['url']
     pol = result['data']['dominentpol']
-    aqilevel = classify(aqi)
+    aqilevel, warning = classify(aqi)
 
-    message = f"*{city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
+    message = f"📍 *{city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
 
     context.bot.send_message(chat_id=chat_id, text=message,
                              parse_mode='Markdown')
 
 
-
 def location_canceled(update, context):
     chat_id = update.message.chat_id
 
+    context.bot.send_message(chat_id=chat_id, text=messages['home_canceled_msg'])
+
 
 def send_home_monitor(context):
+    job = context.job
+    lat = context.chat_data['lat']
+    lon = context.chat_data['lon']
 
+    endpoint = 'https://api.waqi.info/feed/geo:{0};{1}/?token={2}'.format(
+        lat, lon, AQI_TOKEN)
+
+    result = requests.get(endpoint).json()
+
+    aqi = result['data']['aqi']
+    city = result['data']['city']['name']
+    url = result['data']['city']['url']
+    pol = result['data']['dominentpol']
+    aqilevel, warning = classify(aqi)
+
+    message = f"*🏠 {city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
+
+    context.bot.send_message(job.context, text=message,
+                             parse_mode='Markdown')
 
 
 def classify(aqi):
@@ -155,64 +217,22 @@ def classify(aqi):
         return "Hazardous", warnings['h']
 
 
-def alarm(context):
-    """Send the alarm message."""
-    job = context.job
-    context.bot.send_message(job.context, text='Beep!')
-
-
-def set_timer(update, context):
-    """Add a job to the queue."""
-    chat_id = update.message.chat_id
-    try:
-        # args[0] should contain the time for the timer in seconds
-        due = int(context.args[0])
-        if due < 0:
-            update.message.reply_text('Sorry we can not go back to future!')
-            return
-
-        # Add job to queue and stop current one if there is a timer already
-        if 'job' in context.chat_data:
-            old_job = context.chat_data['job']
-            old_job.schedule_removal()
-        new_job = context.job_queue.run_once(alarm, due, context=chat_id)
-        context.chat_data['job'] = new_job
-
-        update.message.reply_text('Timer successfully set!')
-
-    except (IndexError, ValueError):
-        update.message.reply_text('Usage: /set <seconds>')
-
-
-def unset(update, context):
-    """Remove the job if the user changed their mind."""
-    if 'job' not in context.chat_data:
-        update.message.reply_text('You have no active timer')
-        return
-
-    job = context.chat_data['job']
-    job.schedule_removal()
-    del context.chat_data['job']
-
-    update.message.reply_text('Timer successfully unset!')
-
-
 def main():
     updater = Updater("TOKEN", use_context=True)
 
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", send_start))
-    dp.add_handler(CommandHandler("help", send_start))
-    dp.add_handler(CommandHandler("monitoron", send_monitor_on))
-    dp.add_handler(CommandHandler("monitoroff", send_monitor_off))
-    dp.add_handler(CommandHandler("sethome", send_set_home))
+    dp.add_handler(CommandHandler("help", send_help))
+    dp.add_handler(CommandHandler(["monitoron", "mon", "getupdates", "startupdates"], send_monitor_on))
+    dp.add_handler(CommandHandler(["monitoroff", "moff", "stopupdates"], send_monitor_off))
+    dp.add_handler(CommandHandler(["sethome", "set"], send_set_home))
     dp.add_handler(CommandHandler("home", send_home))
     dp.add_handler(CommandHandler("here", send_here))
-    dp.add_handler(CommandHandler("search", send_search))
+    dp.add_handler(CommandHandler(["search", "find", "city"], send_search))
 
-    dp.add_handler(MessageHandler(Filters.text('Send home location'), home_location_sent))
-    dp.add_handler(MessageHandler(Filters.text('Send location'), here_location_sent))
+    dp.add_handler(MessageHandler(Filters.text('Send home location 📍🏠'), home_location_sent))
+    dp.add_handler(MessageHandler(Filters.text('Send your location 📍🌎'), here_location_sent))
     dp.add_handler(MessageHandler(Filters.text('Cancel'), location_canceled))
 
     updater.start_polling()
