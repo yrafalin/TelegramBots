@@ -32,6 +32,24 @@ def send_set_home(update, context):
 
 def send_home(update, context):
     chat_id = update.message.chat_id
+    lat = context.chat_data['lat']
+    lon = context.chat_data['lon']
+
+    endpoint = 'https://api.waqi.info/feed/geo:{0};{1}/?token={2}'.format(
+        lat, lon, AQI_TOKEN)
+
+    result = requests.get(endpoint).json()
+
+    aqi = result['data']['aqi']
+    city = result['data']['city']['name']
+    url = result['data']['city']['url']
+    pol = result['data']['dominentpol']
+    aqilevel = classify(aqi)
+
+    message = f"*Home - {city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
+
+    context.bot.send_message(chat_id=chat_id, text=message,
+                             parse_mode='Markdown')
 
 
 def send_here(update, context):
@@ -58,23 +76,37 @@ def send_search(update, context):
         result = requests.get(endpoint).json()
 
         if result['status'] == 'ok' and len(result['data']) > 0:
+            aqi = result['data']['aqi']
+            city = result['data']['city']['name']
+            url = result['data']['city']['url']
+            pol = result['data']['dominentpol']
+            attrib = result['data']['attributions']
 
+            message =
+
+            context.bot.send_message(chat_id=chat_id, text=message,
+                                     parse_mode='Markdown')
         else:
             context.bot.send_message(chat_id=chat_id, text=messages['search_failed_msg'])
 
 
-def send_start_updates(update, context):
+def send_monitor_on(update, context):
     chat_id = update.message.chat_id
 
 
-def send_stop_updates(update, context):
+def send_monitor_off(update, context):
     chat_id = update.message.chat_id
 
 
 def home_location_sent(update, context):
     chat_id = update.message.chat_id
+    lat = update.message.location['latitude']
+    lon = update.message.location['longitude']
+
     context.chat_data['lat'] = lat
     context.chat_data['lon'] = lon
+
+    context.bot.send_message(chat_id=chat_id, text=messages['home_set_msg'])
 
 
 def here_location_sent(update, context):
@@ -87,7 +119,13 @@ def here_location_sent(update, context):
 
     result = requests.get(endpoint).json()
 
-    message =
+    aqi = result['data']['aqi']
+    city = result['data']['city']['name']
+    url = result['data']['city']['url']
+    pol = result['data']['dominentpol']
+    aqilevel = classify(aqi)
+
+    message = f"*{city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
 
     context.bot.send_message(chat_id=chat_id, text=message,
                              parse_mode='Markdown')
@@ -96,6 +134,10 @@ def here_location_sent(update, context):
 
 def location_canceled(update, context):
     chat_id = update.message.chat_id
+
+
+def send_home_monitor(context):
+
 
 
 def classify(aqi):
@@ -162,8 +204,8 @@ def main():
 
     dp.add_handler(CommandHandler("start", send_start))
     dp.add_handler(CommandHandler("help", send_start))
-    dp.add_handler(CommandHandler("getupdates", send_start_updates))
-    dp.add_handler(CommandHandler("stopupdates", send_stop_updates))
+    dp.add_handler(CommandHandler("monitoron", send_monitor_on))
+    dp.add_handler(CommandHandler("monitoroff", send_monitor_off))
     dp.add_handler(CommandHandler("sethome", send_set_home))
     dp.add_handler(CommandHandler("home", send_home))
     dp.add_handler(CommandHandler("here", send_here))
@@ -172,10 +214,6 @@ def main():
     dp.add_handler(MessageHandler(Filters.text('Send home location'), home_location_sent))
     dp.add_handler(MessageHandler(Filters.text('Send location'), here_location_sent))
     dp.add_handler(MessageHandler(Filters.text('Cancel'), location_canceled))
-    dp.add_handler(CommandHandler("set", set_timer,
-                                  pass_args=True,
-                                  pass_job_queue=True,
-                                  pass_chat_data=True))
 
     updater.start_polling()
 
