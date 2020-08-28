@@ -1,6 +1,6 @@
 messages = {
-    'search_failed': 'Oops! Looks like that city couldn\'t be found.',
-    'search_missing': 'Hmmm, you might be missing a city name. Try again.',
+    'search_failed_msg': 'Oops! Looks like that city couldn\'t be found.',
+    'search_missing_msg': 'Hmmm, you might be missing a city name. Try again.',
     'home_request_msg': 'Are you sure you want to set this as your home location?',
     'here_request_msg': 'Would you mind sharing your location?',
     'home_set_msg': 'Your home location is all set! Now you can use /home and monitoring.',
@@ -9,7 +9,8 @@ messages = {
     'monitor_success_msg': 'Monitoring has successfully been set. Way to go!',
     'monitor_off_msg': 'Monitoring has been turned off.',
     'missing_monitor_msg': 'Whoops, monitoring hasn\'t been turned on yet.',
-    'home_canceled_msg': 'Looks like you didn\'t send a location. If privacy is a concern, use /search.'
+    'home_canceled_msg': 'Looks like you didn\'t send a location. If privacy is a concern, use /search.',
+    'bad_address_msg': 'Uhh oh! I couldn\'t read that zip code. Send only a 5 digit number.'
 }
 
 start = '''This bot helps you find pollution levels around the world with /search,
@@ -48,7 +49,7 @@ warnings = {
     'g': '',
     'm': 'People with respiratory disease, such as asthma, should limit prolonged outdoor exertion.\n',
     'usg': 'People with respiratory disease, such as asthma, should limit prolonged outdoor exertion.\n',
-    'u':, 'Everyone should limit prolonged outdoor exertion.\n'
+    'u': 'Everyone should limit prolonged outdoor exertion.\n',
     'vu': 'Everyone should limit outdoor exertion.\n',
     'h': 'Everyone should avoid all outdoor exertion.\n'
 }
