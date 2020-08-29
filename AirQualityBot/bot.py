@@ -50,6 +50,10 @@ def send_set_home(update, context):
         context.chat_data['lon'] = zipcode[1]
         print(context.chat_data['lat'], context.chat_data['lon'])
 
+        aqi, city, url, pol = request_aqi_by_geo(zipcode[0], zipcode[1])
+        context.chat_data['city'] = city
+        print(context.chat_data)
+
         context.bot.send_message(chat_id=chat_id, text=messages['home_set_msg'])
     else:
         location_keyboard = KeyboardButton(
@@ -67,19 +71,11 @@ def send_set_home(update, context):
 def send_home(update, context):
     chat_id = update.message.chat_id
 
-    if 'lat' in context.chat_data:
+    if 'city' in context.chat_data:
         lat = context.chat_data['lat']
         lon = context.chat_data['lon']
 
-        endpoint = 'https://api.waqi.info/feed/geo:{0};{1}/?token={2}'.format(
-            lat, lon, AQI_TOKEN)
-
-        result = requests.get(endpoint).json()
-
-        aqi = result['data']['aqi']
-        city = result['data']['city']['name']
-        url = result['data']['city']['url']
-        pol = result['data']['dominentpol']
+        aqi, city, url, pol = request_aqi_by_geo(lat, lon)
         aqilevel, warning = classify(aqi)
 
         message = f"*🏠 {city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
@@ -112,15 +108,7 @@ def send_search(update, context):
     elif ' '.join(context.args).isdigit():
         zipcode = zip_geo(context.args[0])
 
-        endpoint = 'https://api.waqi.info/feed/geo:{0};{1}/?token={2}'.format(
-            zipcode[0], zipcode[1], AQI_TOKEN)
-
-        result = requests.get(endpoint).json()
-
-        aqi = result['data']['aqi']
-        city = result['data']['city']['name']
-        url = result['data']['city']['url']
-        pol = result['data']['dominentpol']
+        aqi, city, url, pol = request_aqi_by_geo(zipcode[0], zipcode[1])
         aqilevel, warning = classify(aqi)
 
         message = f"*{city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
@@ -133,17 +121,8 @@ def send_search(update, context):
         result = requests.get(endpoint).json()
 
         if result['status'] == 'ok' and len(result['data']) > 0:
-
             geo = result['data'][0]['station']['geo']
-            endpoint = 'https://api.waqi.info/feed/geo:{0};{1}/?token={2}'.format(
-                geo[0], geo[1], AQI_TOKEN)
-
-            result = requests.get(endpoint).json()
-
-            aqi = result['data']['aqi']
-            city = result['data']['city']['name']
-            url = result['data']['city']['url']
-            pol = result['data']['dominentpol']
+            aqi, city, url, pol = request_aqi_by_geo(geo[0], geo[1])
             aqilevel, warning = classify(aqi)
 
             message = f"*{city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
@@ -161,19 +140,21 @@ def send_monitor_on(update, context):
         context.bot.send_message(chat_id=chat_id, text=messages['missing_time_msg'])
         return
 
-    if 'lat' in context.chat_data:
+    if 'city' in context.chat_data:
         try:
             tf = TimezoneFinder()
             tz_at_home = tf.timezone_at(lng=context.chat_data['lon'], lat=context.chat_data['lat'])
             hometz = pytz.timezone(tz_at_home)
+            print(hometz)
 
+            reminder_time = datetime.now(hometz)
             # args[0] should contain the time for the timer in seconds
-            naive_reminder_time = datetime.strptime(context.args[0], "%H:%M")
-            print(naive_reminder_time)
-            reminder_time = hometz.localize(naive_reminder_time)
-            print('localized', reminder_time)
-            reminder_time = reminder_time.astimezone(pytz.utc).time()
-            print('timezoned', reminder_time, tz_at_home)
+            input_time = datetime.strptime(context.args[0], "%H:%M")
+            print(input_time)
+            reminder_time = reminder_time.replace(hour=input_time.hour, minute=input_time.minute, second=input_time.minute)
+            print(reminder_time)
+            reminder_time = reminder_time.time()
+            print(reminder_time)
 
             # Add job to queue and stop current one if there is a timer already
             if 'job' in context.chat_data:
@@ -207,6 +188,21 @@ def send_monitor_off(update, context):
         context.bot.send_message(chat_id=chat_id, text=messages['missing_moniter_msg'])
 
 
+def send_monitor_status(update, context):
+    chat_id = update.message.chat_id
+    print(context.chat_data)
+
+    if 'job' in context.chat_data:
+        message = f"The monitor is currently on. To turn it off, enter /monitoroff.\n\nYour home is set as *{context.chat_data['city']}*. You can change it with /sethome."
+        context.bot.send_message(chat_id=chat_id, text=message, parse_mode='Markdown')
+    else:
+        if 'city' in context.chat_data:
+            message = f"The monitor is currently off. To turn it on, enter /monitoron and a time.\n\nYour home is set as *{context.chat_data['city']}*. You can change it with /sethome."
+            context.bot.send_message(chat_id=chat_id, text=message, parse_mode='Markdown')
+        else:
+            context.bot.send_message(chat_id=chat_id, text=messages['status_off_msg'])
+
+
 def location_sent(update, context):
     if 'pending' in context.chat_data:
         print(context.chat_data['pending'])
@@ -219,9 +215,16 @@ def location_sent(update, context):
 def home_location_sent(update, context):
     chat_id = update.message.chat_id
 
-    context.chat_data['lat'] = update.message.location['latitude']
-    context.chat_data['lon'] = update.message.location['longitude']
+    lat = update.message.location['latitude']
+    lon = update.message.location['longitude']
+
+    context.chat_data['lat'] = lat
+    context.chat_data['lon'] = lon
     print(context.chat_data['lat'], context.chat_data['lon'])
+
+    aqi, city, url, pol = request_aqi_by_geo(lat, lon)
+    context.chat_data['city'] = city
+    print(context.chat_data)
 
     context.chat_data['pending'] = None
     context.bot.send_message(chat_id=chat_id, text=messages['home_set_msg'])
@@ -232,15 +235,7 @@ def here_location_sent(update, context):
     lat = update.message.location['latitude']
     lon = update.message.location['longitude']
 
-    endpoint = 'https://api.waqi.info/feed/geo:{0};{1}/?token={2}'.format(
-        lat, lon, AQI_TOKEN)
-
-    result = requests.get(endpoint).json()
-
-    aqi = result['data']['aqi']
-    city = result['data']['city']['name']
-    url = result['data']['city']['url']
-    pol = result['data']['dominentpol']
+    aqi, city, url, pol = request_aqi_by_geo(lat, lon)
     aqilevel, warning = classify(aqi)
 
     message = f"📍 *{city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
@@ -261,16 +256,9 @@ def send_home_monitor(context):
     job = context.job
     lat = job.context.chat_data['lat']
     lon = job.context.chat_data['lon']
+    print('SENDING DAILY UPDATE')
 
-    endpoint = 'https://api.waqi.info/feed/geo:{0};{1}/?token={2}'.format(
-        lat, lon, AQI_TOKEN)
-
-    result = requests.get(endpoint).json()
-
-    aqi = result['data']['aqi']
-    city = result['data']['city']['name']
-    url = result['data']['city']['url']
-    pol = result['data']['dominentpol']
+    aqi, city, url, pol = request_aqi_by_geo(lat, lon)
     aqilevel, warning = classify(aqi)
 
     message = f"*Your daily update!*\n*🏠 {city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
@@ -283,6 +271,20 @@ def zip_geo(zip):
     search = SearchEngine()
     zipcode = search.by_zipcode(zip).to_dict()
     return [zipcode['lat'], zipcode['lng']]
+
+
+def request_aqi_by_geo(lat, lon):
+    endpoint = 'https://api.waqi.info/feed/geo:{0};{1}/?token={2}'.format(
+        lat, lon, AQI_TOKEN)
+
+    result = requests.get(endpoint).json()
+
+    aqi = result['data']['aqi']
+    city = result['data']['city']['name']
+    url = result['data']['city']['url']
+    pol = result['data']['dominentpol']
+    print(aqi, city, url, pol)
+    return aqi, city, url, pol
 
 
 def classify(straqi):
@@ -310,6 +312,7 @@ def main():
     dp.add_handler(CommandHandler("help", send_help))
     dp.add_handler(CommandHandler(["monitoron", "mon", "getupdates", "startupdates"], send_monitor_on))
     dp.add_handler(CommandHandler(["monitoroff", "moff", "stopupdates"], send_monitor_off))
+    dp.add_handler(CommandHandler(["monitorstatus", "mstatus", "status"], send_monitor_status))
     dp.add_handler(CommandHandler(["sethome", "set"], send_set_home))
     dp.add_handler(CommandHandler("home", send_home))
     dp.add_handler(CommandHandler("here", send_here))
