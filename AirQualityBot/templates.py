@@ -1,5 +1,5 @@
 messages = {
-    'search_failed_msg': 'Oops! Looks like that city couldn\'t be found.',
+    'search_failed_msg': 'Oops! Looks like that location couldn\'t be found.',
     'search_missing_msg': 'Hmmm, you might be missing a city name. Try again.',
     'home_request_msg': 'Are you sure you want to set this as your home location?',
     'here_request_msg': 'Would you mind sharing your location?',
@@ -11,7 +11,8 @@ messages = {
     'missing_monitor_msg': 'Whoops, monitoring hasn\'t been turned on yet.',
     'home_canceled_msg': 'Looks like you didn\'t send a location. If privacy is a concern, use /search.',
     'bad_address_msg': 'Uhh oh! I couldn\'t read that zip code. Send only a 5 digit number.',
-    'status_off_msg': 'The monitor is currently off. To turn it on, enter /monitoron and a time.\n\nYour home isn\'t set at the moment. You can add a home location with /sethome.'
+    'status_off_msg': 'The monitor is currently off. To turn it on, enter /monitoron and a time.\n\nYour home isn\'t set at the moment. You can add a home location with /sethome.',
+    'geo_unavailable_msg': 'Unfortunately our location search is unavailable at the moment.'
 }
 
 start = '''This bot helps you find pollution levels around the world with /search, at home with /home, and where you're at with /here. Get daily pollution updates with /monitoron and find more commands with /help.'''
@@ -48,6 +49,8 @@ help = '''📍To check the AQI of your location\n/here\nMake sure to "Send your 
 # 📍To check if daily AQI updates are on\n
 # /monitorstatus\n
 # Aliases: /mstatus, /status'''
+
+pol_names = {'p2': 'PM2.5', 'p1': 'PM10', 'o3': 'O3', 'n2': 'NO2', 's2': 'SO2', 'co': 'CO2'}
 
 warnings = {
     'g': '',
