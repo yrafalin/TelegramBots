@@ -56,7 +56,6 @@ def send_set_home(update, context):
 
         aqi, city, url, pol = request_aqi_by_geo(zipcode[0], zipcode[1])
         context.chat_data['city'] = city
-        print(context.chat_data)
 
         context.bot.send_message(chat_id=chat_id, text=messages['home_set_msg'])
     else:
@@ -152,19 +151,19 @@ def send_monitor_on(update, context):
             hometz = pytz.timezone(tz_at_home)
             print(hometz)
 
-            reminder_time = datetime.now(hometz)
+            reminder_time = datetime.utcnow()
             # args[0] should contain the time for the timer in seconds
             input_time = datetime.strptime(context.args[0], "%H:%M")
             print(input_time)
             reminder_time = reminder_time.replace(hour=input_time.hour, minute=input_time.minute, second=input_time.minute)
             print(reminder_time)
-            reminder_time = reminder_time.time()
+            reminder_time = (reminder_time - hometz.utcoffset(reminder_time)).time()
             print(reminder_time)
 
-            # Add job to queue and stop current one if there is one already
-            # if 'job' in context.chat_data:
-            #     old_job = context.chat_data['job']
-            #     old_job.schedule_removal()
+            Add job to queue and stop current one if there is one already
+            if 'job' in context.chat_data:
+                old_job = context.chat_data['job']
+                old_job.schedule_removal()
 
             job_context = ChatContext(chat_id, context.chat_data, context.args[0])
             new_job = context.job_queue.run_daily(send_home_monitor, reminder_time, context=job_context)
@@ -195,7 +194,6 @@ def send_monitor_off(update, context):
 
 def send_monitor_status(update, context):
     chat_id = update.message.chat_id
-    print(context.chat_data)
 
     if 'job' in context.chat_data:
         message = f"The monitor is currently on. To turn it off, enter /monitoroff.\n\nYour home is set as *{context.chat_data['city']}*. You can change it with /sethome."
@@ -210,7 +208,6 @@ def send_monitor_status(update, context):
 
 def location_sent(update, context):
     if 'pending' in context.chat_data:
-        print(context.chat_data['pending'])
         if context.chat_data['pending'] == 'home':
             home_location_sent(update, context)
         elif context.chat_data['pending'] == 'here':
@@ -229,7 +226,6 @@ def home_location_sent(update, context):
 
     aqi, city, url, pol = request_aqi_by_geo(lat, lon)
     context.chat_data['city'] = city
-    print(context.chat_data)
 
     context.chat_data['pending'] = None
     context.bot.send_message(chat_id=chat_id, text=messages['home_set_msg'])
