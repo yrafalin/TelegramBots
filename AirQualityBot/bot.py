@@ -4,10 +4,11 @@ from datetime import datetime
 import requests
 import pytz
 from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderUnavailable
 from uszipcode import SearchEngine
 from timezonefinder import TimezoneFinder
 from telegram import KeyboardButton, ReplyKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Defaults
 
 from config import *
 from templates import *
@@ -18,11 +19,14 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
+geolocator = Nominatim(user_agent="airqualitymonitorbot")
+
 
 class ChatContext:
-    def __init__(self, id, data):
+    def __init__(self, id, data, time):
         self.chat_id = id
         self.chat_data = data
+        self.chat_time = time  # remove after testing !!!
 
 
 def send_start(update, context):
@@ -78,7 +82,7 @@ def send_home(update, context):
         aqi, city, url, pol = request_aqi_by_geo(lat, lon)
         aqilevel, warning = classify(aqi)
 
-        message = f"*🏠 {city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
+        message = f"*🏠 {city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ iqair.com"
 
         context.bot.send_message(chat_id=chat_id, text=message,
                                  parse_mode='Markdown')
@@ -111,26 +115,27 @@ def send_search(update, context):
         aqi, city, url, pol = request_aqi_by_geo(zipcode[0], zipcode[1])
         aqilevel, warning = classify(aqi)
 
-        message = f"*{city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
+        message = f"*{city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ iqair.com"
 
         context.bot.send_message(chat_id=chat_id, text=message,
                                  parse_mode='Markdown')
     else:
-        endpoint = f"https://api.waqi.info/search/?keyword={' '.join(context.args)}&token={AQI_TOKEN}"
+        try:
+            location = geolocator.geocode(' '.join(context.args))
+            print(location)
 
-        result = requests.get(endpoint).json()
+            if hasattr(location, 'latitude') and hasattr(location, 'longitude'):
+                aqi, city, url, pol = request_aqi_by_geo(location.latitude, location.longitude)
+                aqilevel, warning = classify(aqi)
 
-        if result['status'] == 'ok' and len(result['data']) > 0:
-            geo = result['data'][0]['station']['geo']
-            aqi, city, url, pol = request_aqi_by_geo(geo[0], geo[1])
-            aqilevel, warning = classify(aqi)
+                message = f"*{city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ iqair.com"
 
-            message = f"*{city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
-
-            context.bot.send_message(chat_id=chat_id, text=message,
-                                     parse_mode='Markdown')
-        else:
-            context.bot.send_message(chat_id=chat_id, text=messages['search_failed_msg'])
+                context.bot.send_message(chat_id=chat_id, text=message,
+                                         parse_mode='Markdown')
+            else:
+                context.bot.send_message(chat_id=chat_id, text=messages['search_failed_msg'])
+        except GeocoderUnavailable:
+            context.bot.send_message(chat_id=chat_id, text=messages['geo_unavailable_msg'])
 
 
 def send_monitor_on(update, context):
@@ -156,12 +161,12 @@ def send_monitor_on(update, context):
             reminder_time = reminder_time.time()
             print(reminder_time)
 
-            # Add job to queue and stop current one if there is a timer already
-            if 'job' in context.chat_data:
-                old_job = context.chat_data['job']
-                old_job.schedule_removal()
+            # Add job to queue and stop current one if there is one already
+            # if 'job' in context.chat_data:
+            #     old_job = context.chat_data['job']
+            #     old_job.schedule_removal()
 
-            job_context = ChatContext(chat_id, context.chat_data)
+            job_context = ChatContext(chat_id, context.chat_data, context.args[0])
             new_job = context.job_queue.run_daily(send_home_monitor, reminder_time, context=job_context)
             context.chat_data['job'] = new_job
 
@@ -238,7 +243,7 @@ def here_location_sent(update, context):
     aqi, city, url, pol = request_aqi_by_geo(lat, lon)
     aqilevel, warning = classify(aqi)
 
-    message = f"📍 *{city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
+    message = f"📍 *{city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ iqair.com"
 
     context.chat_data['pending'] = None
     context.bot.send_message(chat_id=chat_id, text=message,
@@ -256,12 +261,12 @@ def send_home_monitor(context):
     job = context.job
     lat = job.context.chat_data['lat']
     lon = job.context.chat_data['lon']
-    print('SENDING DAILY UPDATE')
+    print('SENDING DAILY UPDATE', job.context.chat_time, job.context.chat_data)
 
     aqi, city, url, pol = request_aqi_by_geo(lat, lon)
     aqilevel, warning = classify(aqi)
 
-    message = f"*Your daily update!*\n*🏠 {city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ waqi.info"
+    message = f"{job.context.chat_time} *Your daily update!*\n*🏠 {city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ iqair.com"
 
     context.bot.send_message(job.context.chat_id, text=message,
                              parse_mode='Markdown')
@@ -274,16 +279,23 @@ def zip_geo(zip):
 
 
 def request_aqi_by_geo(lat, lon):
-    endpoint = 'https://api.waqi.info/feed/geo:{0};{1}/?token={2}'.format(
+    endpoint = 'http://api.airvisual.com/v2/nearest_city?lat={0}&lon={1}&key={2}'.format(
         lat, lon, AQI_TOKEN)
 
     result = requests.get(endpoint).json()
 
-    aqi = result['data']['aqi']
-    city = result['data']['city']['name']
-    url = result['data']['city']['url']
-    pol = result['data']['dominentpol']
-    print(aqi, city, url, pol)
+    aqi = result['data']['current']['pollution']['aqius']
+    city = ', '.join((result['data']['city'],result['data']['state'],result['data']['country']))
+    pol = pol_names[result['data']['current']['pollution']['mainus']]
+
+    address = [result['data']['country'],result['data']['state'],result['data']['city']]
+    if 'station' in result['data']:
+        address.append(result['data']['station'])
+    address = map(lambda point: point.lower().replace(' ', '-'), address)
+    url = 'iqair.com/us/'+'/'.join(address)
+
+    print(datetime.now(), aqi, city, url, pol)
+
     return aqi, city, url, pol
 
 
@@ -304,7 +316,9 @@ def classify(straqi):
 
 
 def main():
-    updater = Updater(BOT_TOKEN, use_context=True)
+    defaults = Defaults(disable_web_page_preview=True)
+
+    updater = Updater(BOT_TOKEN, use_context=True, defaults=defaults)
 
     dp = updater.dispatcher
 
