@@ -8,7 +8,7 @@ from geopy.exc import GeocoderUnavailable
 from uszipcode import SearchEngine
 from timezonefinder import TimezoneFinder
 from telegram import KeyboardButton, ReplyKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Defaults
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Defaults, PicklePersistence
 
 from config import *
 from templates import *
@@ -160,7 +160,7 @@ def send_monitor_on(update, context):
             reminder_time = (reminder_time - hometz.utcoffset(reminder_time)).time()
             print(reminder_time)
 
-            Add job to queue and stop current one if there is one already
+            # Add job to queue and stop current one if there is one already
             if 'job' in context.chat_data:
                 old_job = context.chat_data['job']
                 old_job.schedule_removal()
@@ -313,8 +313,10 @@ def classify(straqi):
 
 def main():
     defaults = Defaults(disable_web_page_preview=True)
+    pp = PicklePersistence(filename='chat_data_states', store_user_data=False,
+                                 store_bot_data=False)
 
-    updater = Updater(BOT_TOKEN, use_context=True, defaults=defaults)
+    updater = Updater(BOT_TOKEN, use_context=True, persistence=pp, defaults=defaults)
 
     dp = updater.dispatcher
 
