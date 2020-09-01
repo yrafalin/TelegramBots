@@ -23,10 +23,9 @@ geolocator = Nominatim(user_agent="airqualitymonitorbot")
 
 
 class ChatContext:
-    def __init__(self, id, data, time):
+    def __init__(self, id, data):
         self.chat_id = id
         self.chat_data = data
-        self.chat_time = time  # remove after testing !!!
 
 
 def send_start(update, context):
@@ -162,12 +161,14 @@ def send_monitor_on(update, context):
 
             # Add job to queue and stop current one if there is one already
             if 'job' in context.chat_data:
-                old_job = context.chat_data['job']
+                old_job = context.bot_data[chat_id]
                 old_job.schedule_removal()
 
-            job_context = ChatContext(chat_id, context.chat_data, context.args[0])
+            context.chat_data['time'] = context.args[0]
+            job_context = ChatContext(chat_id, context.chat_data)
             new_job = context.job_queue.run_daily(send_home_monitor, reminder_time, context=job_context)
-            context.chat_data['job'] = new_job
+            context.bot_data[chat_id] = new_job
+            context.chat_data['job'] = True
 
             context.bot.send_message(chat_id=chat_id, text=messages['monitor_success_msg'])
 
@@ -182,8 +183,9 @@ def send_monitor_off(update, context):
     chat_id = update.message.chat_id
 
     if 'job' in context.chat_data:
-        job = context.chat_data['job']
+        job = context.bot_data[chat_id]
         job.schedule_removal()
+        del context.bot_data[chat_id]
         del context.chat_data['job']
 
         context.bot.send_message(chat_id=chat_id, text=messages['monitor_off_msg'])
@@ -196,7 +198,7 @@ def send_monitor_status(update, context):
     chat_id = update.message.chat_id
 
     if 'job' in context.chat_data:
-        message = f"The monitor is currently on. To turn it off, enter /monitoroff.\n\nYour home is set as *{context.chat_data['city']}*. You can change it with /sethome."
+        message = f"The monitor is currently on, set for {context.chat_data['time']}. To turn it off, enter /monitoroff.\n\nYour home is set as *{context.chat_data['city']}*. You can change it with /sethome."
         context.bot.send_message(chat_id=chat_id, text=message, parse_mode='Markdown')
     else:
         if 'city' in context.chat_data:
@@ -257,15 +259,32 @@ def send_home_monitor(context):
     job = context.job
     lat = job.context.chat_data['lat']
     lon = job.context.chat_data['lon']
-    print('SENDING DAILY UPDATE', job.context.chat_time, job.context.chat_data)
+    print('SENDING DAILY UPDATE', job.context.chat_data)
 
     aqi, city, url, pol = request_aqi_by_geo(lat, lon)
     aqilevel, warning = classify(aqi)
 
-    message = f"{job.context.chat_time} *Your daily update!*\n*🏠 {city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ iqair.com"
+    message = f"{job.context.chat_data['time']} *Your daily update!*\n*🏠 {city}*\nAQI: {aqi} ({aqilevel})\nDominant pollutant: {pol.upper()}\n{warning}\nFor more info, click [here]({url})\n_Source:_ iqair.com"
 
     context.bot.send_message(job.context.chat_id, text=message,
                              parse_mode='Markdown')
+
+
+def restart_jobs(dp):
+    for chat_id in dp.chat_data:
+        if 'job' in dp.chat_data[chat_id]:
+            tf = TimezoneFinder()
+            tz_at_home = tf.timezone_at(lng=dp.chat_data[chat_id]['lon'], lat=dp.chat_data[chat_id]['lat'])
+            hometz = pytz.timezone(tz_at_home)
+
+            reminder_time = datetime.utcnow()
+            input_time = datetime.strptime(dp.chat_data[chat_id]['time'], "%H:%M")
+            reminder_time = reminder_time.replace(hour=input_time.hour, minute=input_time.minute, second=input_time.minute)
+            reminder_time = (reminder_time - hometz.utcoffset(reminder_time)).time()
+
+            job_context = ChatContext(chat_id, dp.chat_data[chat_id])
+            new_job = dp.job_queue.run_daily(send_home_monitor, reminder_time, context=job_context)
+            dp.bot_data[chat_id] = new_job
 
 
 def zip_geo(zip):
@@ -319,6 +338,8 @@ def main():
     updater = Updater(BOT_TOKEN, use_context=True, persistence=pp, defaults=defaults)
 
     dp = updater.dispatcher
+
+    restart_jobs(dp)
 
     dp.add_handler(CommandHandler("start", send_start))
     dp.add_handler(CommandHandler("help", send_help))
