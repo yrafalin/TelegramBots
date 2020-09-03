@@ -1,0 +1,2 @@
+https://stackoverflow.com/questions/1450897/remove-characters-except-digits-from-string-using-python
+https://stackoverflow.com/questions/40986737/how-to-obtain-username-first-name-or-last-name-of-a-telegram-user-with-python-t
