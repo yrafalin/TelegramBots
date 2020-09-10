@@ -13,9 +13,7 @@ logger = logging.getLogger(__name__)
 
 def send_start(update, context):
     chat_id = update.message.chat_id
-
     context.chat_data['active'] = True
-
     context.bot.send_message(chat_id=chat_id, text=start)
 
 
@@ -25,7 +23,7 @@ def send_pause(update, context):
     context.bot.send_message(chat_id=chat_id, text="Paused")
 
 
-def send_pause(update, context):
+def send_resume(update, context):
     chat_id = update.message.chat_id
     context.chat_data['active'] = True
     context.bot.send_message(chat_id=chat_id, text="Resumed")
