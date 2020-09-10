@@ -49,6 +49,9 @@ def send_set_home(update, context):
         context.bot.send_message(chat_id=chat_id, text=messages['bad_address_msg'])
     elif len(context.args) == 1:
         zipcode = zip_geo(context.args[0])
+        if zipcode[0] is None or zipcode[1] is None:
+            context.bot.send_message(chat_id=chat_id, text=messages['bad_address_msg'])
+            return
         context.chat_data['lat'] = zipcode[0]
         context.chat_data['lon'] = zipcode[1]
         print(context.chat_data['lat'], context.chat_data['lon'])
@@ -191,7 +194,7 @@ def send_monitor_off(update, context):
         context.bot.send_message(chat_id=chat_id, text=messages['monitor_off_msg'])
 
     else:
-        context.bot.send_message(chat_id=chat_id, text=messages['missing_moniter_msg'])
+        context.bot.send_message(chat_id=chat_id, text=messages['missing_monitor_msg'])
 
 
 def send_monitor_status(update, context):
@@ -330,6 +333,10 @@ def classify(straqi):
         return "Hazardous", warnings['h']
 
 
+# def print_id(update, context):
+#     print(update.message.message_id, update.message.text[:10], update.message.from_user)
+
+
 def main():
     defaults = Defaults(disable_web_page_preview=True)
     pp = PicklePersistence(filename='chat_data_states', store_user_data=False,
@@ -353,6 +360,7 @@ def main():
 
     dp.add_handler(MessageHandler(Filters.location, location_sent))
     dp.add_handler(MessageHandler(Filters.text('Cancel'), location_canceled))
+    # dp.add_handler(MessageHandler(Filters.text, print_id))
 
     updater.start_polling()
 
