@@ -30,6 +30,7 @@ def check_assassin(update, context):
     if context.chat_data['name'] == '':
         del context.chat_data['name']
         context.chat_data['login'] = 0
+        context.bot.send_message(chat_id=chat_id, text='Please try setting your name again.')
         return
     if context.chat_data['login'] == 1:
         context.bot.send_message(chat_id=chat_id, text='Please enter a password with /login [password] before continuing.')
