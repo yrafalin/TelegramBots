@@ -27,6 +27,10 @@ def check_assassin(update, context):
     if context.chat_data['login'] == 0:
         context.bot.send_message(chat_id=chat_id, text='Sorry, I don\'t know your name. Use /set [name].')
         return
+    if context.chat_data['name'] == '':
+        del context.chat_data['name']
+        context.chat_data['login'] = 0
+        return
     if context.chat_data['login'] == 1:
         context.bot.send_message(chat_id=chat_id, text='Please enter a password with /login [password] before continuing.')
         return
@@ -57,19 +61,21 @@ def set_name(update, context):
     chat_id = update.message.chat_id
     if 'login' not in context.chat_data:
         context.chat_data['login'] = 0
-    if len(context.args) == 1:
+    if len(context.args) < 2:
         context.bot.send_message(chat_id=chat_id, text='Sorry, but that is not a participant\'s name.')
         return
     name = ' '.join(context.args)
-    if 'name' not in context.chat_data:
+    if context.chat_data['login'] == 0:
         if check_name(name):
             context.chat_data['name'] = name
             context.chat_data['login'] = 1
-            context.bot.send_message(chat_id=chat_id, text='Please send the correct password with /login [password].')
+            context.bot.send_message(chat_id=chat_id, text='Now, please send your password with /login [password].')
         else:
             context.bot.send_message(chat_id=chat_id, text='Sorry, but that is not a participant\'s name. Put the first name and last initial.')
-    else:
+    elif context.chat_data['login'] == 2:
         context.bot.send_message(chat_id=chat_id, text='Sorry, but you already have a name. To change it please contact Andrew.')
+    elif context.chat_data['login'] == 1:
+        context.bot.send_message(chat_id=chat_id, text='Please enter your password with /login [password] before submitting a guess.')
 
 
 def set_login(update, context):
