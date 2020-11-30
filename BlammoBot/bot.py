@@ -79,8 +79,10 @@ def set_login(update, context):
     elif context.chat_data['login'] == 2:
         context.bot.send_message(chat_id=chat_id, text='Whoops, you\'re already fully logged in.')
     elif context.chat_data['login'] == 1:
+        with open(PAIRINGS, 'r') as csvfile:
+            pairings_reader = list(csv.reader(csvfile))
         idx = [row[0] for row in pairings_reader].index(context.chat_data['name'])
-        if idx[1] == pwd:
+        if pairings_reader[idx][1] == pwd:
             context.chat_data['attempts'] = []
             context.chat_data['login'] = 2
             context.bot.send_message(chat_id=chat_id, text='Your name has been set. You can now guess your assassin!')
