@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 def send_start(update, context):
     chat_id = update.message.chat_id
     context.chat_data['login'] = 0
+    context.bot.send_message(chat_id=chat_id, text='Welcome! Please set your name with /set [name].')
     print('starting')
 
 
