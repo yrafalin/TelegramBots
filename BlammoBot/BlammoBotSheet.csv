@@ -40,8 +40,8 @@ Anna K,man6,Brynn S,Jodie C,video,target
 Brynn S,kind52,Meher B,Anna K,meme,reopening
 Meher B,name68,Adrienne P,Brynn S,move,pods
 Adrienne P,right43,Amrutha R,Meher B,rock,cohort
-Amrutha R,change90,Sam P,Adrienne P,project,stephen dunn
-Sam P,law64,Anya P,Amrutha R,time,roundtable
+Amrutha R,change90,Anya P,Adrienne P,project,stephen dunn
+Sam P,law64,FALSE,#N/A,time,roundtable
 Sam M,idea72,FALSE,#N/A,sad,Luke De / De
 Bodie C,mother36,FALSE,#N/A,sleep,cross country
 Spencer B,force99,Elliot C,Nicole K,train,ISOS
@@ -69,10 +69,10 @@ Isabelle S,company24,Luca L,Gabi/Gabe B,talk,summer reading
 Luca L,eye46,Isabelle H,Isabelle S,bag,MA / major assessment
 Isabelle H,power58,matthew s,Luca L,fight,canvas
 matthew s,information75,Tara S,Isabelle H,vote,college counseling
-Tara S,student15,Laura C,matthew s,pay,peer consulting
-Laura C,time1,Michelle Z,Tara S,loud,peer tutoring
-Michelle Z,point32,Isabella Y,Laura C,WiFi / internet,graduation
-Isabella Y,system25,Eugenia X,Michelle Z,drive,open campus
+Tara S,student15,Isabella Y,matthew s,pay,peer consulting
+Laura C,time1,FALSE,#N/A,loud,peer tutoring
+Michelle Z,point32,FALSE,#N/A,WiFi / internet,graduation
+Isabella Y,system25,Eugenia X,Tara S,drive,open campus
 Eugenia X,city66,Claire G,Isabella Y,breakfast,Nueva blue / Nueva hex code
 Claire G,teacher98,James T,Eugenia X,lunch,Quest
 James T,lot42,Zachary S,Claire G,read,pilot
