@@ -2,10 +2,10 @@
 Admin A,hackerhacker,mytarget,myassassin,myword1,myword2
 Anya P,book45,Eva S,Sam P,pet,freemail
 Eva S,school12,Christine Z,Anya P,plant,eval / evaluation / narrative
-Christine Z,story39,Logan R,Eva S,walk,grade inflation
+Christine Z,story39,Aura M,Eva S,walk,grade inflation
 Enzo S,car65,FALSE,#N/A,road,WRC
-Logan R,line61,Aura M,Christine Z,backpack,maverick
-Aura M,others79,Caroline P,Logan R,book,growth mindset
+Logan R,line61,FALSE,#N/A,backpack,maverick
+Aura M,others79,Caroline P,Christine Z,book,growth mindset
 Caroline P,house54,Raza R,Aura M,class,nueva flex
 Raza R,part20,Anping Z,Caroline P,sun,4904 / team 4904
 Anping Z,way4,Humza R,Raza R,music,lee / lee fertig
@@ -56,9 +56,9 @@ Kate E,education100,John C,Houjun L,sign,parent teacher conferences
 John C,room35,Anahita A,Kate E,player,nueva notes
 Anahita A,guy95,Akshay S,John C,win,nueva internship
 Albert H,body74,FALSE,#N/A,lose,community service learning / CSL
-Akshay S,day5,Dominic L,Anahita A,spring,science thursday
-Dominic L,party88,Mia T,Akshay S,fall,samosas
-Mia T,kid73,Hannah D,Dominic L,summer,the current / the nueva current
+Akshay S,day5,Mia T,Anahita A,spring,science thursday
+Dominic L,party88,FALSE,#N/A,fall,samosas
+Mia T,kid73,Hannah D,Akshay S,summer,the current / the nueva current
 Hannah D,country17,Adam S,Mia T,ocean,remote learning
 Adam S,fact40,Quinn A,Hannah D,boat,big block
 Quinn A,child10,Anoushka K,Adam S,bus,back to school night
