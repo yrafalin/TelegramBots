@@ -26,11 +26,11 @@ Max M,parent77,Annabella C,Ben G,email,grandparents and special friends day / GP
 Annabella C,hour59,Owen Y,Max M,text,steel drums
 Jonathon T,program26,FALSE,#N/A,home,NuevaHacks
 Lauren S,study44,FALSE,#N/A,quarantine,rubric
-Owen Y,face78,Kelly P,Annabella C,state,standards / standards-based grading
+Owen Y,face78,Sofia T,Annabella C,state,standards / standards-based grading
 Ellie K,side51,FALSE,#N/A,week,foundational
 Akshar R,woman8,FALSE,#N/A,president,proficient
-Kelly P,research93,Sofia T,Owen Y,afternoon,exemplary
-Sofia T,door82,Wilson G,Kelly P,truth,Open N
+Kelly P,research93,FALSE,#N/A,afternoon,exemplary
+Sofia T,door82,Wilson G,Owen Y,truth,Open N
 Wilson G,people3,Samara B,Sofia T,winter,tutorial
 Samara B,job47,Cole B,Wilson G,forest,student council
 Cole B,father57,Julia K,Samara B,fast,PSAT
@@ -39,8 +39,8 @@ Jodie C,health83,Anna K,Julia K,dad,blammo
 Anna K,man6,Brynn S,Jodie C,video,target
 Brynn S,kind52,Meher B,Anna K,meme,reopening
 Meher B,name68,Adrienne P,Brynn S,move,pods
-Adrienne P,right43,Amrutha R,Meher B,rock,cohort
-Amrutha R,change90,Anya P,Adrienne P,project,stephen dunn
+Adrienne P,right43,Anya P,Meher B,rock,cohort
+Amrutha R,change90,FALSE,#N/A,project,stephen dunn
 Sam P,law64,FALSE,#N/A,time,roundtable
 Sam M,idea72,FALSE,#N/A,sad,Luke De / De
 Bodie C,mother36,FALSE,#N/A,sleep,cross country
@@ -66,9 +66,9 @@ Anoushka K,head53,Amalia K,Quinn A,hot,nueva auction / the auction
 Amalia K,community67,Gabi/Gabe B,Anoushka K,cold,STEM fair
 Gabi/Gabe B,word48,Isabelle S,Amalia K,code,maverick mornings
 Isabelle S,company24,Luca L,Gabi/Gabe B,talk,summer reading
-Luca L,eye46,Isabelle H,Isabelle S,bag,MA / major assessment
-Isabelle H,power58,matthew s,Luca L,fight,canvas
-matthew s,information75,Tara S,Isabelle H,vote,college counseling
+Luca L,eye46,matthew s,Isabelle S,bag,MA / major assessment
+Isabelle H,power58,FALSE,#N/A,fight,canvas
+matthew s,information75,Tara S,Luca L,vote,college counseling
 Tara S,student15,Eugenia X,matthew s,pay,peer consulting
 Laura C,time1,FALSE,#N/A,loud,peer tutoring
 Michelle Z,point32,FALSE,#N/A,WiFi / internet,graduation
