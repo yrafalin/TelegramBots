@@ -359,7 +359,7 @@ def main():
     dp.add_handler(CommandHandler(["search", "find", "city"], send_search))
 
     dp.add_handler(MessageHandler(Filters.location, location_sent))
-    dp.add_handler(MessageHandler(Filters.text('Cancel'), location_canceled))
+    dp.add_handler(MessageHandler(Filters.regex(r'Cancel'), location_canceled))
     # dp.add_handler(MessageHandler(Filters.text, print_id))
 
     updater.start_polling()
