@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import logging
 
 from telegram.ext import Updater, CommandHandler, Filters, Defaults, PicklePersistence
