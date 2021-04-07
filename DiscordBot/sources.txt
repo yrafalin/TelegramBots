@@ -1,0 +1,7 @@
+https://discord.com/developers/docs/intro
+https://discord.com/developers/docs/topics/community-resources
+https://github.com/Rapptz/discord.py
+https://discordpy.readthedocs.io/en/latest/index.html
+https://github.com/Rapptz/discord.py/blob/master/examples/guessing_game.py
+
+https://stackoverflow.com/questions/55660322/need-help-storing-data-for-different-servers-with-discord-py

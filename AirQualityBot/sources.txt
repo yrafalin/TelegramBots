@@ -6,6 +6,7 @@ https://github.com/udit-001/smokey-bot
 https://www.youtube.com/watch?v=5OL7fu2R4M8
 https://aqicn.org/api/
 https://aqicn.org/json-api/doc/
+https://aqicn.org/scale/
 https://github.com/MrMinimal64/timezonefinder
 https://github.com/geopy/geopy
 https://pypi.org/project/uszipcode/
@@ -14,6 +15,7 @@ https://docs.python.org/3/library/datetime.html
 https://stackoverflow.com/questions/15742045/getting-time-zone-from-lat-long-coordinates
 http://pytz.sourceforge.net/
 https://api-docs.iqair.com/
+https://docs.airnowapi.org/
 https://support.iqair.com/en/articles/3029432-how-can-i-access-air-pollution-data-through-airvisual-s-air-quality-api
 https://core.telegram.org/bots
 https://core.telegram.org/bots/samples
@@ -23,3 +25,5 @@ https://stackoverflow.com/questions/40033150/telegram-bot-getupdates-vs-setwebho
 https://medium.com/@matt95.righetti/build-your-first-telegram-bot-using-python-and-heroku-79d48950d4b0
 https://www.presentslide.in/2019/08/best-telegram-bots.html
 https://sendpulse.com/blog/telegram-bot-examples
+https://www.toptal.com/python/telegram-bot-tutorial-python
+https://www.freecodecamp.org/news/learn-to-build-your-first-bot-in-telegram-with-python-4c99526765e4/
