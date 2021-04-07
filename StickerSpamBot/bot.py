@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import logging
 import random
 import string
@@ -45,10 +46,33 @@ def send_sticker_spam(update, context):
 
 
 def send_anonpoll(update, context):
-    print('got a poll')
-    print(vars(update))
-    print(update.message.poll.question)
-    context.bot.send_poll(chat_id=poll_group_id, question=update.message.poll.question, options=[x.text for x in update.message.poll.options], is_anonymous=update.message.poll.is_anonymous, allows_multiple_answers=update.message.poll.allows_multiple_answers)
+    chat_id = update.message.chat_id
+    if 'delay' in context.chat_data and context.chat_data['delay'] == True:
+        context.chat_data['delay'] = False
+
+        if 'job' in context.chat_data:
+            old_job = context.bot_data[chat_id]
+            old_job.schedule_removal()
+
+        new_job = context.job_queue.run_once(send_delay_poll, 7200,
+                                            context=[update.message.poll.question, [x.text for x in update.message.poll.options], update.message.poll.is_anonymous, update.message.poll.allows_multiple_answers])
+        context.bot_data[chat_id] = new_job
+        context.chat_data['job'] = True
+
+    else:
+        print("Poll:", update.message.poll.question)
+        context.bot.send_poll(chat_id=poll_group_id, question=update.message.poll.question, options=[x.text for x in update.message.poll.options], is_anonymous=update.message.poll.is_anonymous, allows_multiple_answers=update.message.poll.allows_multiple_answers)
+
+
+def send_delay_poll(context):
+    job = context.job
+    context.bot.send_poll(chat_id=poll_group_id, question=job.context[0], options=job.context[1], is_anonymous=job.context[2], allows_multiple_answers=job.context[3])
+
+
+def delay_poll(update, context):
+    chat_id = update.message.chat_id
+    context.chat_data['delay'] = True
+    context.bot.send_message(chat_id=chat_id, text="Delay is on for the next poll")
 
 
 def print_id(update, context):
@@ -70,6 +94,7 @@ def main():
     dp.add_handler(CommandHandler("start", send_start))
     dp.add_handler(CommandHandler("pause", send_pause))
     dp.add_handler(CommandHandler("resume", send_resume))
+    dp.add_handler(CommandHandler("delay", delay_poll))
     dp.add_handler(MessageHandler(Filters.poll, send_anonpoll))
     dp.add_handler(MessageHandler(Filters.user(TARGET), send_sticker_spam))
     dp.add_handler(MessageHandler(Filters.text, print_id))
