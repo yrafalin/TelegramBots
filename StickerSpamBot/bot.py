@@ -50,14 +50,15 @@ def send_anonpoll(update, context):
     if 'delay' in context.chat_data and context.chat_data['delay'] == True:
         context.chat_data['delay'] = False
 
-        if 'job' in context.chat_data:
-            old_job = context.bot_data[chat_id]
-            old_job.schedule_removal()
+        #if 'job' in context.chat_data:
+            #old_job = context.bot_data[chat_id]
+            #old_job.schedule_removal()
 
-        new_job = context.job_queue.run_once(send_delay_poll, 7200,
+
+        new_job = context.job_queue.run_once(send_delay_poll, context.chat_data['delay_time'],
                                             context=[update.message.poll.question, [x.text for x in update.message.poll.options], update.message.poll.is_anonymous, update.message.poll.allows_multiple_answers])
-        context.bot_data[chat_id] = new_job
-        context.chat_data['job'] = True
+        #context.bot_data[chat_id] = new_job
+        #context.chat_data['job'] = True
 
     else:
         print("Poll:", update.message.poll.question)
@@ -70,9 +71,28 @@ def send_delay_poll(context):
 
 
 def delay_poll(update, context):
+    #del context.chat_data['job']
     chat_id = update.message.chat_id
-    context.chat_data['delay'] = True
-    context.bot.send_message(chat_id=chat_id, text="Delay is on for the next poll")
+    if 'delay' in context.chat_data and context.chat_data['delay'] == True:
+        context.chat_data['delay'] = False
+        context.bot.send_message(chat_id=chat_id, text="Delay is OFF for the next poll")
+    else:
+        if len(context.args) == 1 and context.args[0].isnumeric():
+            context.chat_data['delay_time'] = int(context.args[0])*60
+        else:
+            context.chat_data['delay_time'] = 7200
+        context.chat_data['delay'] = True
+        context.bot.send_message(chat_id=chat_id, text="Delay is ON for the next poll, "+str(context.chat_data['delay_time']/60)+' minutes')
+
+
+# def restart_jobs(dp):
+#     for chat_id in dp.chat_data:
+#         if 'job' in dp.chat_data[chat_id]:
+#
+#
+#             job_context = ChatContext(chat_id, dp.chat_data[chat_id])
+#             new_job = dp.job_queue.run_daily(send_home_monitor, reminder_time, context=job_context)
+#             dp.bot_data[chat_id] = new_job
 
 
 def print_id(update, context):
@@ -90,6 +110,8 @@ def main():
     updater = Updater(BOT_TOKEN, use_context=True, persistence=pp)
 
     dp = updater.dispatcher
+
+    # restart_jobs(dp)
 
     dp.add_handler(CommandHandler("start", send_start))
     dp.add_handler(CommandHandler("pause", send_pause))
