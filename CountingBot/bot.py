@@ -102,7 +102,7 @@ def send_stats(update, context):
         user_score = context.chat_data["stats"][user_id]["highscore"]
         user_success = context.chat_data["stats"][user_id]["successes"]
         user_fail = context.chat_data["stats"][user_id]["failures"]
-        personal_stats.append(f'\n\n*@{user_name}*\nHigh score: {user_score}\nSuccesses: {user_success}\nFailures: {user_fail}')
+        personal_stats.append(f'\n\n*@ {user_name}*\nHigh score: {user_score}\nSuccesses: {user_success}\nFailures: {user_fail}')
     personal_stats = ''.join(personal_stats)
 
     message = f"*Overall stats*\nHigh score: {highscore}\nTotal successes: {successes}\nTotal failures: {failures}{personal_stats}"
